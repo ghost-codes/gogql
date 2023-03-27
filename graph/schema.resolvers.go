@@ -6,19 +6,30 @@ package graph
 
 import (
 	"context"
+	"math/rand"
 	"fmt"
 
 	"github.com/ghost-codes/gogql/graph/model"
 )
 
-// CreateTodo is the resolver for the createTodo field.
-func (r *mutationResolver) CreateTodo(ctx context.Context, input model.NewTodo) (*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: CreateTodo - createTodo"))
+// CreateVideo is the resolver for the createVideo field.
+func (r *mutationResolver) CreateVideo(ctx context.Context, input *model.NewVideo) (*model.Video, error) {
+    video := model.Video{
+        ID: fmt.Sprintf("T%d",rand.Int()),
+        Title: input.Title,
+        URL: input.URL,
+        Auther: &model.User{ID: input.UserID, Name: "user",},
+    }
+
+    r.videos=append(r.videos, &video)
+
+    return &video,nil
+        
 }
 
-// Todos is the resolver for the todos field.
-func (r *queryResolver) Todos(ctx context.Context) ([]*model.Todo, error) {
-	panic(fmt.Errorf("not implemented: Todos - todos"))
+// Videos is the resolver for the videos field.
+func (r *queryResolver) Videos(ctx context.Context) ([]*model.Video, error) {
+    return r.videos,nil
 }
 
 // Mutation returns MutationResolver implementation.
