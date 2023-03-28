@@ -1,13 +1,17 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	db "github.com/ghost-codes/gogql/db/sqlc"
 	"github.com/ghost-codes/gogql/graph"
+	"github.com/ghost-codes/gogql/util"
+    _ "github.com/lib/pq"
 )
 
 const defaultPort = "8080"
@@ -18,7 +22,23 @@ func main() {
 		port = defaultPort
 	}
 
-	srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{}}))
+
+    config,err:= util.LoadConfig(".");
+
+    if err!=nil{
+        log.Fatal("error occured while loading config vars",err);
+    }
+
+    conn,err:= sql.Open("postgres",config.DBSource)
+    if err!=nil{
+        log.Fatal("connection could not be established with db:",err)
+    }
+
+    store:=db.NewStore(conn);
+    srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
+        Store: *store,
+        Config: config,
+    }}))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	http.Handle("/graphql", srv)

@@ -20,16 +20,15 @@ func (r *mutationResolver) CreateVideo(ctx context.Context, input *model.NewVide
         URL: input.URL,
         Auther: &model.User{ID: input.UserID, Name: "user",},
     }
-
-    r.videos=append(r.videos, &video)
-
+    name :="Hope"
+    r.Store.Queries.CreateUser(ctx,&name)
     return &video,nil
         
 }
 
 // Videos is the resolver for the videos field.
 func (r *queryResolver) Videos(ctx context.Context) ([]*model.Video, error) {
-    return r.videos,nil
+    return nil,nil
 }
 
 // Mutation returns MutationResolver implementation.

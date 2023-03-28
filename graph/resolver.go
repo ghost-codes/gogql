@@ -1,11 +1,15 @@
 package graph
 
-import "github.com/ghost-codes/gogql/graph/model"
+import (
+	db "github.com/ghost-codes/gogql/db/sqlc"
+	"github.com/ghost-codes/gogql/util"
+)
 
 // This file will not be regenerated automatically.
 //
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct{
-    videos []*model.Video
+    Config util.Config
+    Store db.Store
 }
