@@ -14,6 +14,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
+	db "github.com/ghost-codes/gogql/db/sqlc"
 	"github.com/ghost-codes/gogql/graph/model"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
@@ -39,6 +40,7 @@ type Config struct {
 type ResolverRoot interface {
 	Mutation() MutationResolver
 	Query() QueryResolver
+	Video() VideoResolver
 }
 
 type DirectiveRoot struct {
@@ -59,18 +61,21 @@ type ComplexityRoot struct {
 	}
 
 	Video struct {
-		Auther func(childComplexity int) int
+		Author func(childComplexity int) int
 		ID     func(childComplexity int) int
 		Title  func(childComplexity int) int
-		URL    func(childComplexity int) int
+		Url    func(childComplexity int) int
 	}
 }
 
 type MutationResolver interface {
-	CreateVideo(ctx context.Context, input *model.NewVideo) (*model.Video, error)
+	CreateVideo(ctx context.Context, input *model.NewVideo) (*db.Video, error)
 }
 type QueryResolver interface {
-	Videos(ctx context.Context) ([]*model.Video, error)
+	Videos(ctx context.Context) ([]*db.Video, error)
+}
+type VideoResolver interface {
+	Author(ctx context.Context, obj *db.Video) (*db.User, error)
 }
 
 type executableSchema struct {
@@ -121,12 +126,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.User.Name(childComplexity), true
 
-	case "Video.auther":
-		if e.complexity.Video.Auther == nil {
+	case "Video.author":
+		if e.complexity.Video.Author == nil {
 			break
 		}
 
-		return e.complexity.Video.Auther(childComplexity), true
+		return e.complexity.Video.Author(childComplexity), true
 
 	case "Video.id":
 		if e.complexity.Video.ID == nil {
@@ -143,11 +148,11 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		return e.complexity.Video.Title(childComplexity), true
 
 	case "Video.url":
-		if e.complexity.Video.URL == nil {
+		if e.complexity.Video.Url == nil {
 			break
 		}
 
-		return e.complexity.Video.URL(childComplexity), true
+		return e.complexity.Video.Url(childComplexity), true
 
 	}
 	return 0, false
@@ -328,9 +333,9 @@ func (ec *executionContext) _Mutation_createVideo(ctx context.Context, field gra
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(*model.Video)
+	res := resTmp.(*db.Video)
 	fc.Result = res
-	return ec.marshalOVideo2ᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋgraphᚋmodelᚐVideo(ctx, field.Selections, res)
+	return ec.marshalOVideo2ᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋdbᚋsqlcᚐVideo(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_createVideo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -347,8 +352,8 @@ func (ec *executionContext) fieldContext_Mutation_createVideo(ctx context.Contex
 				return ec.fieldContext_Video_title(ctx, field)
 			case "url":
 				return ec.fieldContext_Video_url(ctx, field)
-			case "auther":
-				return ec.fieldContext_Video_auther(ctx, field)
+			case "author":
+				return ec.fieldContext_Video_author(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Video", field.Name)
 		},
@@ -393,9 +398,9 @@ func (ec *executionContext) _Query_videos(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.([]*model.Video)
+	res := resTmp.([]*db.Video)
 	fc.Result = res
-	return ec.marshalNVideo2ᚕᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋgraphᚋmodelᚐVideoᚄ(ctx, field.Selections, res)
+	return ec.marshalNVideo2ᚕᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋdbᚋsqlcᚐVideoᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Query_videos(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -412,8 +417,8 @@ func (ec *executionContext) fieldContext_Query_videos(ctx context.Context, field
 				return ec.fieldContext_Video_title(ctx, field)
 			case "url":
 				return ec.fieldContext_Video_url(ctx, field)
-			case "auther":
-				return ec.fieldContext_Video_auther(ctx, field)
+			case "author":
+				return ec.fieldContext_Video_author(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Video", field.Name)
 		},
@@ -550,7 +555,7 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *db.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -576,9 +581,9 @@ func (ec *executionContext) _User_id(ctx context.Context, field graphql.Collecte
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int32)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNID2int32(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_User_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -594,7 +599,7 @@ func (ec *executionContext) fieldContext_User_id(ctx context.Context, field grap
 	return fc, nil
 }
 
-func (ec *executionContext) _User_name(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+func (ec *executionContext) _User_name(ctx context.Context, field graphql.CollectedField, obj *db.User) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_User_name(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -620,9 +625,9 @@ func (ec *executionContext) _User_name(ctx context.Context, field graphql.Collec
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_User_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -638,7 +643,7 @@ func (ec *executionContext) fieldContext_User_name(ctx context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _Video_id(ctx context.Context, field graphql.CollectedField, obj *model.Video) (ret graphql.Marshaler) {
+func (ec *executionContext) _Video_id(ctx context.Context, field graphql.CollectedField, obj *db.Video) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Video_id(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -664,9 +669,9 @@ func (ec *executionContext) _Video_id(ctx context.Context, field graphql.Collect
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(int32)
 	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
+	return ec.marshalNID2int32(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Video_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -682,7 +687,7 @@ func (ec *executionContext) fieldContext_Video_id(ctx context.Context, field gra
 	return fc, nil
 }
 
-func (ec *executionContext) _Video_title(ctx context.Context, field graphql.CollectedField, obj *model.Video) (ret graphql.Marshaler) {
+func (ec *executionContext) _Video_title(ctx context.Context, field graphql.CollectedField, obj *db.Video) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Video_title(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -708,9 +713,9 @@ func (ec *executionContext) _Video_title(ctx context.Context, field graphql.Coll
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Video_title(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -726,7 +731,7 @@ func (ec *executionContext) fieldContext_Video_title(ctx context.Context, field 
 	return fc, nil
 }
 
-func (ec *executionContext) _Video_url(ctx context.Context, field graphql.CollectedField, obj *model.Video) (ret graphql.Marshaler) {
+func (ec *executionContext) _Video_url(ctx context.Context, field graphql.CollectedField, obj *db.Video) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Video_url(ctx, field)
 	if err != nil {
 		return graphql.Null
@@ -740,7 +745,7 @@ func (ec *executionContext) _Video_url(ctx context.Context, field graphql.Collec
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.URL, nil
+		return obj.Url, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -752,9 +757,9 @@ func (ec *executionContext) _Video_url(ctx context.Context, field graphql.Collec
 		}
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.(*string)
 	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
+	return ec.marshalNString2ᚖstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Video_url(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -770,8 +775,8 @@ func (ec *executionContext) fieldContext_Video_url(ctx context.Context, field gr
 	return fc, nil
 }
 
-func (ec *executionContext) _Video_auther(ctx context.Context, field graphql.CollectedField, obj *model.Video) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Video_auther(ctx, field)
+func (ec *executionContext) _Video_author(ctx context.Context, field graphql.CollectedField, obj *db.Video) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Video_author(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -784,7 +789,7 @@ func (ec *executionContext) _Video_auther(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Auther, nil
+		return ec.resolvers.Video().Author(rctx, obj)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -796,17 +801,17 @@ func (ec *executionContext) _Video_auther(ctx context.Context, field graphql.Col
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.User)
+	res := resTmp.(*db.User)
 	fc.Result = res
-	return ec.marshalNUser2ᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+	return ec.marshalNUser2ᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋdbᚋsqlcᚐUser(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Video_auther(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Video_author(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Video",
 		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
+		IsMethod:   true,
+		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "id":
@@ -2748,7 +2753,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 
 var userImplementors = []string{"User"}
 
-func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
+func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *db.User) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -2783,7 +2788,7 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 
 var videoImplementors = []string{"Video"}
 
-func (ec *executionContext) _Video(ctx context.Context, sel ast.SelectionSet, obj *model.Video) graphql.Marshaler {
+func (ec *executionContext) _Video(ctx context.Context, sel ast.SelectionSet, obj *db.Video) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, videoImplementors)
 	out := graphql.NewFieldSet(fields)
 	var invalids uint32
@@ -2796,29 +2801,42 @@ func (ec *executionContext) _Video(ctx context.Context, sel ast.SelectionSet, ob
 			out.Values[i] = ec._Video_id(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "title":
 
 			out.Values[i] = ec._Video_title(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "url":
 
 			out.Values[i] = ec._Video_url(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
-		case "auther":
+		case "author":
+			field := field
 
-			out.Values[i] = ec._Video_auther(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Video_author(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
 			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return innerFunc(ctx)
+
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -3163,13 +3181,13 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
-func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
-	res, err := graphql.UnmarshalID(v)
+func (ec *executionContext) unmarshalNID2int32(ctx context.Context, v interface{}) (int32, error) {
+	res, err := graphql.UnmarshalInt32(v)
 	return res, graphql.ErrorOnPath(ctx, err)
 }
 
-func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalID(v)
+func (ec *executionContext) marshalNID2int32(ctx context.Context, sel ast.SelectionSet, v int32) graphql.Marshaler {
+	res := graphql.MarshalInt32(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -3193,7 +3211,32 @@ func (ec *executionContext) marshalNString2string(ctx context.Context, sel ast.S
 	return res
 }
 
-func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+func (ec *executionContext) unmarshalNString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNString2ᚖstring(ctx context.Context, sel ast.SelectionSet, v *string) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	res := graphql.MarshalString(*v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) marshalNUser2githubᚗcomᚋghostᚑcodesᚋgogqlᚋdbᚋsqlcᚐUser(ctx context.Context, sel ast.SelectionSet, v db.User) graphql.Marshaler {
+	return ec._User(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋdbᚋsqlcᚐUser(ctx context.Context, sel ast.SelectionSet, v *db.User) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -3203,7 +3246,7 @@ func (ec *executionContext) marshalNUser2ᚖgithubᚗcomᚋghostᚑcodesᚋgogql
 	return ec._User(ctx, sel, v)
 }
 
-func (ec *executionContext) marshalNVideo2ᚕᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋgraphᚋmodelᚐVideoᚄ(ctx context.Context, sel ast.SelectionSet, v []*model.Video) graphql.Marshaler {
+func (ec *executionContext) marshalNVideo2ᚕᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋdbᚋsqlcᚐVideoᚄ(ctx context.Context, sel ast.SelectionSet, v []*db.Video) graphql.Marshaler {
 	ret := make(graphql.Array, len(v))
 	var wg sync.WaitGroup
 	isLen1 := len(v) == 1
@@ -3227,7 +3270,7 @@ func (ec *executionContext) marshalNVideo2ᚕᚖgithubᚗcomᚋghostᚑcodesᚋg
 			if !isLen1 {
 				defer wg.Done()
 			}
-			ret[i] = ec.marshalNVideo2ᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋgraphᚋmodelᚐVideo(ctx, sel, v[i])
+			ret[i] = ec.marshalNVideo2ᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋdbᚋsqlcᚐVideo(ctx, sel, v[i])
 		}
 		if isLen1 {
 			f(i)
@@ -3247,7 +3290,7 @@ func (ec *executionContext) marshalNVideo2ᚕᚖgithubᚗcomᚋghostᚑcodesᚋg
 	return ret
 }
 
-func (ec *executionContext) marshalNVideo2ᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋgraphᚋmodelᚐVideo(ctx context.Context, sel ast.SelectionSet, v *model.Video) graphql.Marshaler {
+func (ec *executionContext) marshalNVideo2ᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋdbᚋsqlcᚐVideo(ctx context.Context, sel ast.SelectionSet, v *db.Video) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -3560,7 +3603,7 @@ func (ec *executionContext) marshalOString2ᚖstring(ctx context.Context, sel as
 	return res
 }
 
-func (ec *executionContext) marshalOVideo2ᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋgraphᚋmodelᚐVideo(ctx context.Context, sel ast.SelectionSet, v *model.Video) graphql.Marshaler {
+func (ec *executionContext) marshalOVideo2ᚖgithubᚗcomᚋghostᚑcodesᚋgogqlᚋdbᚋsqlcᚐVideo(ctx context.Context, sel ast.SelectionSet, v *db.Video) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
 	}

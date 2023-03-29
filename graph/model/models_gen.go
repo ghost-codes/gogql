@@ -7,15 +7,3 @@ type NewVideo struct {
 	URL    string `json:"url"`
 	UserID string `json:"user_id"`
 }
-
-type User struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-type Video struct {
-	ID     string `json:"id"`
-	Title  string `json:"title"`
-	URL    string `json:"url"`
-	Auther *User  `json:"auther"`
-}

@@ -7,28 +7,34 @@ package graph
 import (
 	"context"
 	"math/rand"
-	"fmt"
 
+	db "github.com/ghost-codes/gogql/db/sqlc"
 	"github.com/ghost-codes/gogql/graph/model"
 )
 
 // CreateVideo is the resolver for the createVideo field.
-func (r *mutationResolver) CreateVideo(ctx context.Context, input *model.NewVideo) (*model.Video, error) {
-    video := model.Video{
-        ID: fmt.Sprintf("T%d",rand.Int()),
-        Title: input.Title,
-        URL: input.URL,
-        Auther: &model.User{ID: input.UserID, Name: "user",},
-    }
-    name :="Hope"
-    r.Store.Queries.CreateUser(ctx,&name)
-    return &video,nil
-        
+func (r *mutationResolver) CreateVideo(ctx context.Context, input *model.NewVideo) (*db.Video, error) {
+	authorId := 1
+	video := db.Video{
+		ID:     int32(rand.Int()),
+		Title:  &input.Title,
+		Url:    &input.URL,
+		Author: &authorId,
+	}
+	name := "Hope"
+	r.Store.Queries.CreateUser(ctx, &name)
+	return &video, nil
 }
 
 // Videos is the resolver for the videos field.
-func (r *queryResolver) Videos(ctx context.Context) ([]*model.Video, error) {
-    return nil,nil
+func (r *queryResolver) Videos(ctx context.Context) ([]*db.Video, error) {
+	return nil, nil
+}
+
+// Auther is the resolver for the auther field.
+func (r *videoResolver) Author(ctx context.Context, obj *db.Video) (*db.User, error) {
+	user, err := r.Store.GetAuthorByID(ctx, int32(*obj.Author))
+	return &user, err
 }
 
 // Mutation returns MutationResolver implementation.
@@ -37,5 +43,9 @@ func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 // Query returns QueryResolver implementation.
 func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
+// Video returns VideoResolver implementation.
+func (r *Resolver) Video() VideoResolver { return &videoResolver{r} }
+
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+type videoResolver struct{ *Resolver }

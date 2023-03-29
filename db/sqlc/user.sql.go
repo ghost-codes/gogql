@@ -7,6 +7,8 @@ package db
 
 import (
 	"context"
+
+	"github.com/lib/pq"
 )
 
 const createUser = `-- name: CreateUser :one
@@ -21,4 +23,50 @@ func (q *Queries) CreateUser(ctx context.Context, name *string) (User, error) {
 	var i User
 	err := row.Scan(&i.ID, &i.Name)
 	return i, err
+}
+
+const getAuthorByID = `-- name: GetAuthorByID :one
+SELECT id, name FROM "user"
+WHERE id=$1
+`
+
+func (q *Queries) GetAuthorByID(ctx context.Context, id int32) (User, error) {
+	row := q.db.QueryRowContext(ctx, getAuthorByID, id)
+	var i User
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
+}
+
+const listOfUsers = `-- name: ListOfUsers :many
+SELECT "user".id, "user".name, "video".id AS video_id FROM "user","video"
+WHERE video_id = video.video_id AND video.id = ANY($1::bigint[])
+`
+
+type ListOfUsersRow struct {
+	ID      int32   `json:"id"`
+	Name    *string `json:"name"`
+	VideoID int32   `json:"video_id"`
+}
+
+func (q *Queries) ListOfUsers(ctx context.Context, dollar_1 []int64) ([]ListOfUsersRow, error) {
+	rows, err := q.db.QueryContext(ctx, listOfUsers, pq.Array(dollar_1))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOfUsersRow{}
+	for rows.Next() {
+		var i ListOfUsersRow
+		if err := rows.Scan(&i.ID, &i.Name, &i.VideoID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

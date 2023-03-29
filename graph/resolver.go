@@ -1,6 +1,7 @@
 package graph
 
 import (
+	"github.com/ghost-codes/gogql/dataloader"
 	db "github.com/ghost-codes/gogql/db/sqlc"
 	"github.com/ghost-codes/gogql/util"
 )
@@ -12,4 +13,5 @@ import (
 type Resolver struct{
     Config util.Config
     Store db.Store
+    DataLoaders dataloader.Retriever
 }

@@ -8,10 +8,11 @@ import (
 
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/ghost-codes/gogql/dataloader"
 	db "github.com/ghost-codes/gogql/db/sqlc"
 	"github.com/ghost-codes/gogql/graph"
 	"github.com/ghost-codes/gogql/util"
-    _ "github.com/lib/pq"
+	_ "github.com/lib/pq"
 )
 
 const defaultPort = "8080"
@@ -38,10 +39,13 @@ func main() {
     srv := handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
         Store: *store,
         Config: config,
+        DataLoaders: dataloader.NewRetriever(),
     }}))
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
-	http.Handle("/graphql", srv)
+    
+    dlMiddleware:= dataloader.Middleware(*store);
+    http.Handle("/graphql", dlMiddleware(srv))
 
 	log.Printf("connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))
